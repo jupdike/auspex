@@ -118,6 +118,43 @@ function myTextWrapWalker(doc, parOpts, textsList, x, y, width, height, onStyleC
   return [dy, dy + lineHeight];
 }
 
+function layoutLines(doc, parOpts, textsList, x, y, width, height) {
+  parOpts = parOpts || { align: 'left', justify: false };
+  let isJustified = parOpts.justify; // boolean!
+  let align = parOpts.align;
+  let lastLineBuilder = [];
+  let lastX = -999;
+  let lastY = -999;
+  function myYieldOneLine() {
+    if (lastLineBuilder.length > 0) {
+      let txt = lastLineBuilder.join('');
+      //console.warn('txt:', txt, lastX, lastY);
+      doc.text(txt, lastX, lastY, {lineBreak: false, align: 'left'});
+      lastLineBuilder = [];
+    }
+  }
+  let [y1, y2] = myTextWrapWalker(doc, parOpts, textsList, x, y, width, height,
+    (opts) => {
+      if (opts.font) {
+        console.warn('changing font to:', opts.font);
+        doc.font(opts.font);
+      }
+    },
+    (x, y, word) => {
+      //console.warn('yielded WORD:', word);
+      //doc.text(word, x, y, {lineBreak: false, align: 'left'});
+      lastLineBuilder.push(word);
+      lastX =  (lastX < 0) ? x : lastX;
+      lastY = y;
+    }, () => {
+      //console.warn('yielded BREAK');
+      myYieldOneLine(lastLineBuilder);
+      lastX = -999;
+    });
+  myYieldOneLine(lastLineBuilder);
+  console.warn(y1, y2);
+}
+
 const doc = new PDFDocument();
 doc.pipe(fs.createWriteStream('./build/test.pdf')); // write to PDF
 // add stuff to PDF here using methods described below...
@@ -134,21 +171,7 @@ const margin = 0.5 * (bigWid - half);
 // TODO      NOTE: even left alignment requires typesetting each entire line all at once,
 //                 so soft hyphens do not mess with kerning!
 const textsList = [[text, {font: 'Helvetica'}], [text2, {font: 'Helvetica-Oblique'}]];
-let [y1, y2] = myTextWrapWalker(doc, {lineHeight: 1.2}, textsList, margin, margin, half, 20000,
-  (opts) => {
-    if (opts.font) {
-      console.warn('changing font to:', opts.font);
-      doc.font(opts.font);
-    }
-  },
-  (x, y, word, style) => {
-    console.warn('yielded WORD:', word);
-    doc.text(word, x, y, {lineBreak: false, align: 'left'});
-  }, () => {
-    // nothing to do
-    console.warn('yielded BREAK');
-  });
-console.warn(y1, y2);
+layoutLines(doc, {lineHeight: 1.2}, textsList, margin, margin, half, 20000);
 // finalize the PDF and end the stream
 doc.end();
 
