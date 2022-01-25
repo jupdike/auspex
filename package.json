@@ -4,6 +4,8 @@
   "description": "XML-based PDF typesetting markup language",
   "main": "main.js",
   "dependencies": {
+    "hyphenation.en-us": "^0.2.1",
+    "hypher": "^0.2.5",
     "pdfkit": "^0.13.0"
   },
   "type": "module",
