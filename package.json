@@ -1,0 +1,16 @@
+{
+  "name": "publ",
+  "version": "0.1.0",
+  "description": "XML-based PDF typesetting markup language",
+  "main": "main.js",
+  "dependencies": {
+    "pdfkit": "^0.13.0"
+  },
+  "type": "module",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jared Updike",
+  "license": "BSD-2-Clause"
+}
