@@ -91,21 +91,21 @@ function myTextWrapWalker(doc, parOpts, textsList, x, y, width, height, onStyleC
       const wid = wordWidths[wix];
       if (isShy && dx + wid + sepWid + nextWordWidth + hyphenWidth < width) {
         // next chunk of this word plus a hyphen will fit, so we know we this piece of text will fit and will not need a hyphen
-        onWord(x + dx, y + dy, word);
+        onWord(dx, dy, word);
         dx += wid;
         wix++;
       } else if (isShy && dx + wid + hyphenWidth < width) {
         // next chunk will not fit, but we will, with our hyphen
-        onWord(x + dx, y + dy, word + '-');
+        onWord(dx, dy, word + '-');
         dx += wid + hyphenWidth;
         wix++;
       } else if (!isShy && dx + wid + sepWid < width) {
         // normal case for non-soft-hyphens (potentially, with a trailing hyphen or dash)
-        onWord(x + dx, y + dy, word + seps);
+        onWord(dx, dy, word + seps);
         dx += wid + sepWid;
         wix++;
       } else if (!isShy && dx + wid < width) {
-        onWord(x + dx, y + dy, word);
+        onWord(dx, dy, word);
         dx += wid;
         wix++;
       } else {
@@ -123,36 +123,39 @@ function layoutLines(doc, parOpts, textsList, x, y, width, height) {
   let isJustified = parOpts.justify; // boolean!
   let align = parOpts.align;
   let lastLineBuilder = [];
-  let lastX = -999;
-  let lastY = -999;
+  let lastDX = -999;
+  let lastDY = -999;
   function myYieldOneLine() {
     if (lastLineBuilder.length > 0) {
       let txt = lastLineBuilder.join('');
       //console.warn('txt:', txt, lastX, lastY);
-      doc.text(txt, lastX, lastY, {lineBreak: false, align: 'left'});
+      
+      // TODOx right or center! easy now!
+      // TODO (or a bit hard because of multiple possible styles -- must collect list of builder+style pairs!
+      doc.text(txt, x + lastDX, y + lastDY, {lineBreak: false, align: 'left'});
       lastLineBuilder = [];
     }
   }
-  let [y1, y2] = myTextWrapWalker(doc, parOpts, textsList, x, y, width, height,
+  let [dy1, dy2] = myTextWrapWalker(doc, parOpts, textsList, x, y, width, height,
     (opts) => {
       if (opts.font) {
         console.warn('changing font to:', opts.font);
         doc.font(opts.font);
       }
     },
-    (x, y, word) => {
+    (dx, dy, word) => {
       //console.warn('yielded WORD:', word);
       //doc.text(word, x, y, {lineBreak: false, align: 'left'});
       lastLineBuilder.push(word);
-      lastX =  (lastX < 0) ? x : lastX;
-      lastY = y;
+      lastDX = lastDX < 0 ? dx : lastDX;
+      lastDY = dy;
     }, () => {
       //console.warn('yielded BREAK');
       myYieldOneLine(lastLineBuilder);
-      lastX = -999;
+      lastDX = -999;
     });
   myYieldOneLine(lastLineBuilder);
-  console.warn(y1, y2);
+  console.warn(dy1, dy2);
 }
 
 const doc = new PDFDocument();
