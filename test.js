@@ -70,7 +70,6 @@ function myTextWrapWalker(doc, parOpts, textsList, x, y, width, height, onStyleC
     const spaceWidth = doc.widthOfString(' ', opts);
     const hyphenWidth = doc.widthOfString('-', opts);
     lineHeight = lineHeight || doc.heightOfString('Why?', opts/* TODO merged with parOpts.lineHeight */); // TODO account for line-spacing 1.2x or 1.3x or whatever, but only parOpts can change line-spacing! (and only first font size will effect lineHeight)
-    //console.warn('spaceWidth = ', spaceWidth);
 
     const pairs = splitter(str);
     let wix = 0;
@@ -129,11 +128,16 @@ function layoutLines(doc, parOpts, textsList, x, y, width, height) {
     if (lastLineBuilder.length > 0) {
       let txt = lastLineBuilder.join('');
       //console.warn('txt:', txt, lastX, lastY);
-      
-      // TODOx right or center! easy now!
-      // TODO (or a bit hard because of multiple possible styles -- must collect list of builder+style pairs!
-      doc.text(txt, x + lastDX, y + lastDY, {lineBreak: false, align: 'left'});
-      lastLineBuilder = [];
+      if (txt !== '') {
+        let padX = 0;
+        if (align === 'right') {
+          padX = width - doc.widthOfString(txt, {});
+        } else if (align === 'center') {
+          padX = 0.5 * (width - doc.widthOfString(txt, {}));
+        }
+        doc.text(txt, x + lastDX + padX, y + lastDY, {lineBreak: false, align: 'left'});
+        lastLineBuilder = [];
+      }
     }
   }
   let [dy1, dy2] = myTextWrapWalker(doc, parOpts, textsList, x, y, width, height,
@@ -149,7 +153,8 @@ function layoutLines(doc, parOpts, textsList, x, y, width, height) {
       lastLineBuilder.push(word);
       lastDX = lastDX < 0 ? dx : lastDX;
       lastDY = dy;
-    }, () => {
+    },
+    () => {
       //console.warn('yielded BREAK');
       myYieldOneLine(lastLineBuilder);
       lastDX = -999;
@@ -174,7 +179,7 @@ const margin = 0.5 * (bigWid - half);
 // TODO      NOTE: even left alignment requires typesetting each entire line all at once,
 //                 so soft hyphens do not mess with kerning!
 const textsList = [[text, {font: 'Helvetica'}], [text2, {font: 'Helvetica-Oblique'}]];
-layoutLines(doc, {lineHeight: 1.2}, textsList, margin, margin, half, 20000);
+layoutLines(doc, {lineHeight: 1.2, align: 'center'}, textsList, margin, margin, half, 20000);
 // finalize the PDF and end the stream
 doc.end();
 
