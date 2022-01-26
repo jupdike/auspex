@@ -125,19 +125,28 @@ function layoutLines(doc, parOpts, textsList, x, y, width, height) {
   let lastDX = -999;
   let lastDY = -999;
   function myYieldOneLine() {
-    if (lastLineBuilder.length > 0) {
-      let txt = lastLineBuilder.join('');
-      //console.warn('txt:', txt, lastX, lastY);
-      if (txt !== '') {
-        let padX = 0;
-        if (align === 'right') {
-          padX = width - doc.widthOfString(txt, {});
-        } else if (align === 'center') {
-          padX = 0.5 * (width - doc.widthOfString(txt, {}));
-        }
-        doc.text(txt, x + lastDX + padX, y + lastDY, {lineBreak: false, align: 'left'});
-        lastLineBuilder = [];
+    if (lastLineBuilder.length < 1) {
+      return;
+    }
+    let txt = lastLineBuilder.join('');
+    //console.warn('txt:', txt, lastX, lastY);
+    if (txt === '') {
+      lastLineBuilder = [];
+      return;
+    }
+    if (!isJustified) {
+      // ragged edge
+      let padX = 0;
+      if (align === 'right') {
+        padX = width - doc.widthOfString(txt, {});
+      } else if (align === 'center') {
+        padX = 0.5 * (width - doc.widthOfString(txt, {}));
       }
+      doc.text(txt, x + lastDX + padX, y + lastDY, {lineBreak: false, align: 'left'});
+      lastLineBuilder = [];
+    } else {
+      // justified: left, right, or center!
+      // TODO
     }
   }
   let [dy1, dy2] = myTextWrapWalker(doc, parOpts, textsList, x, y, width, height,
