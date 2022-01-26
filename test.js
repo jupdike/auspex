@@ -56,6 +56,7 @@ function splitter(str) {
 const shy = '\u00AD'; // soft hyphen
 const splitterRegex = new RegExp('[ \u00AD\n-]+', 'g'); // TODO allow em and en dashes
 const oneOrMoreShy = new RegExp('\u00AD+', 'g'); // one or more soft hyphens
+const whitespace = new RegExp('[ \n]+', 'g');
 // does not handle pagination...
 function myTextWrapWalker(doc, parOpts, textsList, x, y, width, height, onStyleChange, onWord, onLine) {
   let lineHeight = 0;
@@ -85,6 +86,9 @@ function myTextWrapWalker(doc, parOpts, textsList, x, y, width, height, onStyleC
       if (seps.match(oneOrMoreShy)) {
         isShy = true;
         seps = '-';
+      }
+      if (seps.match(whitespace)) {
+        seps = ' '; // replace multiple spaces or newlines or combination with just a single space
       }
       const sepWid = doc.widthOfString(seps, {});
       const wid = wordWidths[wix];
@@ -117,6 +121,9 @@ function myTextWrapWalker(doc, parOpts, textsList, x, y, width, height, onStyleC
   return [dy, dy + lineHeight];
 }
 
+// TODO font size 20 test has a few bugs:
+// 1. entire line should not be the same style
+// 2. one hyphen is in the wrong spot, not at the end of the line ... (nor-mal)
 function layoutLines(doc, parOpts, textsList, x, y, width, height) {
   parOpts = parOpts || { align: 'left', justify: false };
   let isJustified = parOpts.justify; // boolean!
@@ -124,7 +131,7 @@ function layoutLines(doc, parOpts, textsList, x, y, width, height) {
   let lastLineBuilder = [];
   let lastDX = -999;
   let lastDY = -999;
-  function myYieldOneLine() {
+  function myYieldOneLine(isVeryLastLine) {
     if (lastLineBuilder.length < 1) {
       return;
     }
@@ -134,19 +141,38 @@ function layoutLines(doc, parOpts, textsList, x, y, width, height) {
       lastLineBuilder = [];
       return;
     }
-    if (!isJustified) {
+    const noInnerWhitespace = txt.trim().match(whitespace) ? false : true;
+    if (!isJustified || isVeryLastLine || noInnerWhitespace) {
       // ragged edge
       let padX = 0;
       if (align === 'right') {
-        padX = width - doc.widthOfString(txt, {});
+        padX = width - doc.widthOfString(txt.trimEnd(), {});
       } else if (align === 'center') {
-        padX = 0.5 * (width - doc.widthOfString(txt, {}));
+        padX = 0.5 * (width - doc.widthOfString(txt.trimEnd(), {}));
       }
       doc.text(txt, x + lastDX + padX, y + lastDY, {lineBreak: false, align: 'left'});
       lastLineBuilder = [];
     } else {
-      // justified: left, right, or center!
-      // TODO
+      //console.warn('justify!');
+      // justified: left, right, or center! (and we are not the last line, so just fill the full width!)
+      const words = txt.trim().split(' ');
+      let totalFilledSpace = 0;
+      words.forEach(word => { totalFilledSpace += doc.widthOfString(word, {}); })
+      let neededSpace = width - totalFilledSpace;
+      // must have more than one word; that is what the whitespace check is, above
+      const denom = words.length - 1;
+      //console.warn(txt, 'denom:', denom);
+      let interWordSpace = neededSpace / denom;
+      let dx = 0;
+      words.forEach(word => {
+        const wordWidth = doc.widthOfString(word, {});
+        if (dx !== 0) {
+          dx += interWordSpace;
+        }
+        doc.text(word, x + dx + lastDX, y + lastDY, {lineBreak: false, align: 'left'});
+        dx += wordWidth;
+      });
+      lastLineBuilder = [];
     }
   }
   let [dy1, dy2] = myTextWrapWalker(doc, parOpts, textsList, x, y, width, height,
@@ -165,30 +191,24 @@ function layoutLines(doc, parOpts, textsList, x, y, width, height) {
     },
     () => {
       //console.warn('yielded BREAK');
-      myYieldOneLine(lastLineBuilder);
+      myYieldOneLine(false);
       lastDX = -999;
     });
-  myYieldOneLine(lastLineBuilder);
+  myYieldOneLine(true);
   console.warn(dy1, dy2);
 }
 
 const doc = new PDFDocument();
 doc.pipe(fs.createWriteStream('./build/test.pdf')); // write to PDF
-// add stuff to PDF here using methods described below...
-doc.fontSize(30);
-// doc.text(`This text is left aligned. ${lorem}`, 160, 160, {
-//   lineBreak: false,
-//   align: 'left'
-// });
+
 const bigWid = 8.5*72;
 const half = bigWid / 2.0;
 const margin = 0.5 * (bigWid - half);
+doc.fontSize(20);
 
-// TODO alignment: left, right, center, with bool justify (get a full line, then typeset it as a single string)
-// TODO      NOTE: even left alignment requires typesetting each entire line all at once,
-//                 so soft hyphens do not mess with kerning!
 const textsList = [[text, {font: 'Helvetica'}], [text2, {font: 'Helvetica-Oblique'}]];
-layoutLines(doc, {lineHeight: 1.2, align: 'center'}, textsList, margin, margin, half, 20000);
+doc.rect(margin, margin, half, 900).stroke();
+layoutLines(doc, {lineHeight: 1.2, align: 'center', justify: true}, textsList, margin, margin, half, 900);
 // finalize the PDF and end the stream
 doc.end();
 
