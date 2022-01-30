@@ -1,5 +1,6 @@
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
+import { BrayElem } from 'bray';
 
 import Hypher from 'hypher';
 import english from 'hyphenation.en-us';
@@ -7,6 +8,9 @@ const h = new Hypher(english);
 function hyphenateText(x) {
   return h.hyphenateText(x);
 }
+
+// works!
+let xyz = BrayElem.create("xyz", []);
 
 const lorem = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in suscipit purus.  Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Vivamus nec hendrerit felis. Morbi aliquam facilisis risus eu lacinia. Sed eu leo in turpis fringilla hendrerit. Ut nec accumsan nisl.';
 
