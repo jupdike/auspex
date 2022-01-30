@@ -1,7 +1,7 @@
 {
-  "name": "publ",
+  "name": "auspex",
   "version": "0.1.0",
-  "description": "XML-based PDF typesetting markup language",
+  "description": "AUStere PDF engine in XML: PDF typesetting markup language",
   "main": "main.js",
   "dependencies": {
     "hyphenation.en-us": "^0.2.1",
