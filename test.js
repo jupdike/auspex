@@ -2,6 +2,8 @@ import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import { BrayElem } from 'bray';
 
+import sax from './sax.js';
+
 import Hypher from 'hypher';
 import english from 'hyphenation.en-us';
 const h = new Hypher(english);
@@ -9,8 +11,25 @@ function hyphenateText(x) {
   return h.hyphenateText(x);
 }
 
-// works!
-let xyz = BrayElem.create("xyz", []);
+// function Xml(props) {
+//   return BrayElem.create('xml2', props, ...props.children);
+// }
+// function Who(props) {
+//   return BrayElem.create('who2', props, ...props.children);
+// }
+// const mapper = { xml: Xml, who: Who };
+// const msg = `<xml>Hello, <who name="world">world</who>!</xml>`;
+// // console.warn('\n' + msg, '\n');
+// let xyz = BrayElem.fromXmlString(sax, msg, mapper);
+// // let xyz = BrayElem.create("xyz", []);
+// // let xyz = BrayElem.fromXmlString(sax,
+// // `<xml>
+// //   <who src="true"/>
+// //   Say something, please!
+// // </xml>
+// // `, mapper);
+// console.warn('-----------------\nxyz =', xyz.renderToString());
+// process.exit(1);
 
 const lorem = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in suscipit purus.  Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Vivamus nec hendrerit felis. Morbi aliquam facilisis risus eu lacinia. Sed eu leo in turpis fringilla hendrerit. Ut nec accumsan nisl.';
 
