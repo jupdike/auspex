@@ -29,7 +29,76 @@ function hyphenateText(x) {
 // // </xml>
 // // `, mapper);
 // console.warn('-----------------\nxyz =', xyz.renderToString());
-// process.exit(1);
+
+// https://stackoverflow.com/questions/464359/custom-exception-type
+function AuspexArgumentException(message) {
+  this.message = message;
+  // Use V8's native method if available, otherwise fallback
+  if ("captureStackTrace" in Error) {
+    Error.captureStackTrace(this, AuspexArgumentException);
+  }
+  else {
+    this.stack = (new Error()).stack;
+  }
+}
+AuspexArgumentException.prototype = Object.create(Error.prototype);
+AuspexArgumentException.prototype.name = "AuspexArgumentException";
+AuspexArgumentException.prototype.constructor = AuspexArgumentException;
+
+function Fragment(props) {
+  let node = BrayElem.create(BrayElem.Fragment, props, ...props.children);
+  //console.warn("Fragment:", node);
+  return node;
+}
+
+function Text(props) {
+  // console.warn("Text -- props:", props);
+  props.children.forEach(kid => {
+    if (BrayElem.isString(kid)) {
+      return;
+    }
+    if (kid.props._oldTagName !== 'text') {
+      throw new AuspexArgumentException("Auspex <text> elements can only contain strings or other <text> elements. Found tag named: " + kid.props._oldTagName);
+    }
+  });
+  // TODOx do something interesting at all, with props.doc or props.bounds ...
+  //
+  //
+  const color = BrayElem.propOrStyleOrDefault(props, 'color', 'black');
+  console.warn('COLOR:', color);
+  let node = BrayElem.create('text2', props, ...props.children);
+  return node;
+}
+
+function View(props) {
+  const children = BrayElem.childrenWithoutWhitespaceStrings(props.children);
+  children.forEach(kid => {
+    if (BrayElem.isString(kid)) {
+      throw new AuspexArgumentException("Auspex <view> elements can only contain tags, not strings. Wrap text in a <text> tag.");
+    }
+  });
+  // TODOx
+  //
+  //
+  return BrayElem.create('view2', props, ...children);
+}
+
+// const msg = `<text>
+//   Some normal text, and then <text style="color: red">red text is here</text>.
+// </text>`;
+const msg = `<view>
+  <fragment>
+    <insider/>
+    <another/>
+  </fragment>
+  <text color="orange">
+    Some normal text, and then <text style="color: red">red text is here</text>.
+  </text>
+</view>`;
+const xyz = BrayElem.fromXmlString(sax, msg, {text: Text, view: View, fragment: Fragment}).invokeSelf();
+console.warn(xyz.renderToString());
+
+process.exit(1);
 
 const lorem = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in suscipit purus.  Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Vivamus nec hendrerit felis. Morbi aliquam facilisis risus eu lacinia. Sed eu leo in turpis fringilla hendrerit. Ut nec accumsan nisl.';
 
