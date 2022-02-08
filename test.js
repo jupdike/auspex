@@ -248,6 +248,11 @@ function myTextWrapWalker(doc, parOpts, textsList, x, y, width, height, onStyleC
         onWord(dx, dy, word);
         dx += wid;
         wix++;
+      } else if (isShy && dx + wid + sepWid + nextWordWidth < width) {
+        // next chunk of this word w/o a hyphen will fit, so we know we this piece of text will fit and will not need a hyphen
+        onWord(dx, dy, word);
+        dx += wid;
+        wix++;
       } else if (isShy && dx + wid + hyphenWidth < width) {
         // next chunk will not fit, but we will, with our hyphen
         onWord(dx, dy, word + '-');
@@ -268,6 +273,7 @@ function myTextWrapWalker(doc, parOpts, textsList, x, y, width, height, onStyleC
         onLine();
       }
     }
+    onLine();
   });
   return [dy, dy + lineHeight];
 }
@@ -282,7 +288,15 @@ function layoutLines(doc, parOpts, textsList, x, y, width, height) {
   let lastLineBuilder = [];
   let lastDX = -999;
   let lastDY = -999;
+  let lastStyleOpts = null;
+  function styler(opts) {
+    if (opts && opts.font) {
+      console.warn('* CHANGE font to:', opts.font);
+      doc.font(opts.font);
+    }
+  }
   function myYieldOneLine(isVeryLastLine) {
+    styler(lastStyleOpts);
     if (lastLineBuilder.length < 1) {
       return;
     }
@@ -312,7 +326,7 @@ function layoutLines(doc, parOpts, textsList, x, y, width, height) {
       let neededSpace = width - totalFilledSpace;
       // must have more than one word; that is what the whitespace check is, above
       const denom = words.length - 1;
-      //console.warn(txt, 'denom:', denom);
+      console.warn(txt+'| denom:', denom);
       let interWordSpace = neededSpace / denom;
       let dx = 0;
       words.forEach(word => {
@@ -327,18 +341,14 @@ function layoutLines(doc, parOpts, textsList, x, y, width, height) {
     }
   }
   let [dy1, dy2] = myTextWrapWalker(doc, parOpts, textsList, x, y, width, height,
-    (opts) => {
-      if (opts.font) {
-        console.warn('changing font to:', opts.font);
-        doc.font(opts.font);
-      }
-    },
-    (dx, dy, word) => {
+    styler,
+    (dx, dy, word, style) => {
       //console.warn('yielded WORD:', word);
       //doc.text(word, x, y, {lineBreak: false, align: 'left'});
       lastLineBuilder.push(word);
       lastDX = lastDX < 0 ? dx : lastDX;
       lastDY = dy;
+      lastStyleOpts = style;
     },
     () => {
       //console.warn('yielded BREAK');
