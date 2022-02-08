@@ -83,22 +83,81 @@ function View(props) {
   return BrayElem.create('view2', props, ...children);
 }
 
+function Document(props) {
+  const children = BrayElem.childrenWithoutWhitespaceStrings(props.children);
+  children.forEach(kid => {
+    if (BrayElem.isString(kid)) {
+      throw new AuspexArgumentException("Auspex <document> elements can only contain tags, not strings. Wrap text in a <text> tag.");
+    }
+  });
+  if (!props._doc) {
+    throw new AuspexArgumentException("Auspex <document> element needs PDFKit document object as props._doc.");
+  }
+  const doc = props._doc;
+  // document metadata
+  if (props.author) {
+    doc.info.Author = props.author;
+  }
+  if (props.subject) {
+    doc.info.Subject = props.subject;
+  }
+  if (props.title) {
+    doc.info.Title = props.title;
+  }
+  if (props.keywords) {
+    doc.info.Keywords = props.keywords;
+  }
+  // TODO do something useful with props._doc and children
+  return BrayElem.create('document2', props, ...children);
+}
+
+function documentRunner(path, documentBrayElem) {
+  if (!documentBrayElem || !documentBrayElem.props || !documentBrayElem.props._oldTagName) {
+    return;
+  }
+  //console.warn(documentBrayElem);
+
+  const doc = new PDFDocument();
+  doc.pipe(fs.createWriteStream(path)); // write to PDF
+  console.warn('Writing PDF to:', path);
+
+  doc.fontSize(20);
+  // TODO actually interesting stuff
+  documentBrayElem.invokeSelf({_doc: doc});
+  //
+  // const bigWid = 8.5*72;
+  // const half = bigWid / 2.0;
+  // const margin = 0.5 * (bigWid - half);
+  // doc.rect(margin, margin, half, 900).stroke();
+  //
+  doc.end();
+  console.warn('Done writing.');
+}
+
 // const msg = `<text>
 //   Some normal text, and then <text style="color: red">red text is here</text>.
 // </text>`;
-const msg = `<view>
-  <fragment>
-    <insider/>
-    <another/>
-  </fragment>
-  <text color="orange">
-    Some normal text, and then <text style="color: red">red text is here</text>.
-  </text>
-</view>`;
-const xyz = BrayElem.fromXmlString(sax, msg, {text: Text, view: View, fragment: Fragment}).invokeSelf();
-console.warn(xyz.renderToString());
+const msg = `<document
+    title="My Documentary Doc"
+    author="Me Myself"
+    keywords="abc, xyz"
+    subject="documenting" >
+  <view>
+    <text color="orange">
+      Some normal text, and then <text style="color: red">red text is here</text>.
+    </text>
+  </view>
+</document>`;
+const elem = BrayElem.fromXmlString(sax, msg,
+  {text: Text,
+    view: View,
+    fragment: Fragment,
+    document: Document,
+  });
 
-process.exit(1);
+documentRunner('./build/test.pdf', elem);
+
+// ---------------------
 
 const lorem = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in suscipit purus.  Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Vivamus nec hendrerit felis. Morbi aliquam facilisis risus eu lacinia. Sed eu leo in turpis fringilla hendrerit. Ut nec accumsan nisl.';
 
@@ -290,32 +349,43 @@ function layoutLines(doc, parOpts, textsList, x, y, width, height) {
   console.warn(dy1, dy2);
 }
 
-const doc = new PDFDocument();
-doc.pipe(fs.createWriteStream('./build/test.pdf')); // write to PDF
+// const doc = new PDFDocument();
+// doc.pipe(fs.createWriteStream('./build/test.pdf')); // write to PDF
 
-const bigWid = 8.5*72;
-const half = bigWid / 2.0;
-const margin = 0.5 * (bigWid - half);
-doc.fontSize(20);
+// const bigWid = 8.5*72;
+// const half = bigWid / 2.0;
+// const margin = 0.5 * (bigWid - half);
+// doc.fontSize(20);
 
-const textsList = [[text, {font: 'Helvetica'}], [text2, {font: 'Helvetica-Oblique'}]];
-doc.rect(margin, margin, half, 900).stroke();
-layoutLines(doc, {lineHeight: 1.2, align: 'center', justify: true}, textsList, margin, margin, half, 900);
-// finalize the PDF and end the stream
-doc.end();
+// const textsList = [[text, {font: 'Helvetica'}], [text2, {font: 'Helvetica-Oblique'}]];
+// doc.rect(margin, margin, half, 900).stroke();
+// //layoutLines(doc, {lineHeight: 1.2, align: 'left', justify: true}, textsList, margin, margin, half, 900);
+// // finalize the PDF and end the stream
+// doc.end();
 
-// PUBL XML input language
-// TODO <document>
-//    - tag to set PDF metadata, contain page maters or page pair masters
-// TODO <page> template tag of some kind, or <pp> for page pairs
+// ---------------
+
+// Auspex XML input language
+// <document>
+//    - tag to set PDF metadata, contains templates and contents (which get put into templates)
+// <template> tag of some kind, one or two pages (these are master pages or page pairs)
+//     - pages="1" (default) or 2
+//     - id (for use by <contents> tag)
+// <contents>
+//     template="idname"
+//     children are views, as below ...
 // Content tags, that get laid out in the page or pp containers:
+//   - the sorts of tags that are common in HTML (h1, p, ol, li, table, ...) would just be
+//     created as function components (function from 'props' to BrayElem), made of nested <view> and <text>
+//     components, with the right style values
 //   - all tags with style attribute (dictionary or flattened string with k:v; k:v as expected)
 //   - <view>
-//        allows zero or more children that are <view/>, <image/>, or <text/> tags, no strings as direct children
+//        - allows zero or more children that are <view/>, <image/>, or <text/> tags, no strings as direct children, whitespace strings ignored
+//        - the layout work is done by flex (like HTML/CSS in browsers, or React Native)
 //   - <text>
 //        allows zero or more children that are <text/> or raw strings (actual content), no views or images as children
 //   - <image> (image view)
 //        laid out like a view, but displays an image
 //        a. has `src` attribute and no children (PNG, JPG, whatever PDF supports) OR
 //        b. only has one child, which is an <svg> tag (and SVG tags as children of that)
-//     <a> for links and anchors
+//     <a> for links and anchors, which work similarly to HTML, but are internal (string with leading '#') and work in PDF viewers
