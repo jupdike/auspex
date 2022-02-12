@@ -27,7 +27,7 @@ Note: the sorts of tags that are common in HTML (`h1`, `p`, `ol`, `li`, `table`,
 
 Note that all tags have various attributes for styling everything, especially the `style` attribute, which can be a dictionary or flattened string with "k1: v1; k2: v2" as expected.
 
-### Content tags, that get laid out inside the containers:
+### Content tags, that get laid out inside the `<template>` `<textframe>` containers:
 
 * `<view>`
   * allows zero or more children that are `<view/>`, `<image/>`, or `<text/>` tags, no strings as direct children; whitespace strings ignored in `view` tags
