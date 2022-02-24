@@ -18,12 +18,13 @@ Create complex PDF layouts with straight XML (and SVG drawings). And automate pa
   * `id` (for use by `<contents>` tag)
   * contains `<textframe>` tags with `x`, `y`, `width`, and `height` and various other attributes (columns) or margins
   * TODO if no `<template>` tags is found, a default one is specified that is just a big rectangle with margins to fit the page
+  * can also contain content tags like `<view>`, `<text>`, etc. so you can display something like a chapter title at the top of the page, for example.
 * TODO `<contents>`
   * `template`="idname"
     * if no template or `<contents>` tag is specified, uses first `<template>` tag (or the default one that gets created for you
   * children are `<view>` tags, as below ...
 
-Note: the sorts of tags that are common in HTML (`h1`, `p`, `ol`, `li`, `table`, ...) would just be created as function components (function from 'props' to BrayElem), made of nested <view> and <text> components, with the right style values. **This is what makes this tool/typesetting language austere**. It is not for writing directly, but for targeting by programs (like Bray but any program can create XML strings however it likes).
+Note: the sorts of tags that are common in HTML (`h1`, `p`, `ol`, `li`, `table`, ...) would just be created as function components (function from 'props' to BrayElem), made of nested `<view>` and `<text>` components, with the right style values. **This is what makes this tool/typesetting language austere**. It is not for writing directly, but for targeting by programs (like Bray but any program can create XML strings however it likes).
 
 Note that all tags have various attributes for styling everything, especially the `style` attribute, which can be a dictionary or flattened string with "k1: v1; k2: v2" as expected.
 
