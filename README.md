@@ -34,7 +34,7 @@ Note that all tags have various attributes for styling everything, especially th
   * allows zero or more children that are `<view/>`, `<image/>`, or `<text/>` tags, no strings as direct children; whitespace strings ignored in `view` tags
   * TODO the layout work is done by flex attributes (like HTML/CSS in browsers, or React Native)
 * `<text>`
-  * allows zero or more children that are <text/> or raw strings (actual text characters as content), no views or images as children
+  * allows zero or more children that are `<text/>` or raw strings (actual text characters as content), no views or images as children
 * TODO `<image>` (image view)
   * laid out like a view, but displays an image
   * two uses cases:
