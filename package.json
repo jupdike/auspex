@@ -4,12 +4,12 @@
   "description": "AUStere PDF engine in XML: PDF typesetting markup language",
   "main": "main.js",
   "dependencies": {
+    "bray": "file:../bray",
     "hyphenation.en-us": "^0.2.1",
     "hypher": "^0.2.5",
     "pdfkit": "^0.13.0"
   },
   "type": "module",
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
